@@ -8,7 +8,7 @@
 #define MAX_PLAYLIST 256       //BegrenzungListeRAMExplosion
 #define MIN_PLAYLIST 0         //Minimal0oder1
 #define MIN_VOLUME 0           //Mindestlautstaerke
-#define MAX_VOLUME 100         //SchutzÜbersteuerungKnarzen
+#define MAX_VOLUME 100         //SchutzUebersteuerungKnarzen
 #define LIST_FILENAME          "MusikSpielerListe.txt"
 //StrukturWAVKopfZEILEN)
 #pragma pack(push, 1)
@@ -39,6 +39,12 @@ private:
             int currentTrack = 0;
             unsigned int sampleRate = 44100;
             //Bruch
+            float convert24BitToFloat(unsigned char* bytes) {
+                // Kombiniert 3 Bytes zu einem 32-bit Integer (Signed)
+                int32_t sample = (bytes[0] << 8) | (bytes[1] << 16) | (bytes[2] << 24);
+                // Normalisieren auf -1.0 bis 1.0
+                return (float)sample / 2147483648.0f;
+                                                        }
             bool loadWAV(const char* filepath) {
             std::ifstream file(filepath, std::ios::binary);
             if (!file) return false;
@@ -49,7 +55,7 @@ private:
             }
             this->sampleRate = header.sampleRate;
             return true;
-        }
+                                                    }
 public:
 //STEUERUNG
                 void key_Space()  { toggle(); }        //Start/Stopp
@@ -113,6 +119,7 @@ public:
                     float sanftesSample = decoderInput[i] * volumeMultiplier;
                                             }
                 for(int i = 0; i < length; i++) {
+                    float rawSample = getNextSampleFromFile();
 //ANTIKNACKRAMPE
             volumeMultiplier += (targetVolume - volumeMultiplier) * 0.001f;
                 float sample = decoderInput[i] * volumeMultiplier;
@@ -136,4 +143,3 @@ public:
 //Zurueck: Pfeil Links
 //Laut Pfeil Hoch, oder Lautertaste Geraet
 //Leise Pfeil Runter, oder Leisertaste Geraet
-
