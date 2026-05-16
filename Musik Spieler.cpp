@@ -121,7 +121,7 @@ public:
                                                 if (!isPlaying) {
                                                     for(int i = 0; i < length; i++) deviceOutput[i] = 0.0f;
                                                     return;
-                                                    float sanftesSample = decoderInput[i] * volumeMultiplier;
+                                                    float sanftesSample = decoderInput[i] * volumeMultiplier; // Unerreichbar
         }
                                                     for(int i = 0; i < length; i++) {
                                                     float rawSample = getNextSampleFromFile();
