@@ -13,7 +13,7 @@
 #define getNextSampleFromFile  /home/Musik/MusikSpieler
 
 
-//StrukturWAVKopfZEILEN)
+//StrukturWAVKopfZEILEN) Umbau // PCM-Stream
 #pragma pack(push, 1)
 struct WAVHeader {
         char riff[4];           //Riffs
@@ -31,7 +31,7 @@ struct WAVHeader {
         uint32_t dataLen;
 };
 #pragma pack(pop)
-
+//Umbau ALSA MMAP
 class MusikSpieler {
 private:
             bool isPlaying = false;
