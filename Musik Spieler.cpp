@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <cstdint>
+#include <string>
 
 #define MIN_SAMPLERATE 44100   //MinimumGuteSoundDiktatur
 #define MAX_SAMPLERATE 192000  //MaximumHighEnd
@@ -9,9 +10,8 @@
 #define MIN_PLAYLIST 0         //Minimal0oder1
 #define MIN_VOLUME 0           //Mindestlautstaerke
 #define MAX_VOLUME 100         //SchutzUebersteuerungKnarzen
-#define LIST_FILENAME          /home/Musik/MusikSpieler/Musikspielerliste/"MusikSpielerListe.txt" //Umbau zu Sektoren auf Datentraeger
-#define getNextSampleFromFile  /home/Musik/MusikSpieler
-
+#define LIST_FILENAME          "/home/Musik/MusikSpieler/Musikspielerliste/MusikSpielerListe.txt" //Umbau zu Sektoren auf Datentraeger
+#define getNextSampleFromFile  "/home/Musik/MusikSpieler"
 
 //StrukturWAVKopfZEILEN) Umbau // PCM-Stream
 #pragma pack(push, 1)
@@ -31,6 +31,7 @@ struct WAVHeader {
         uint32_t dataLen;
 };
 #pragma pack(pop)
+
 //Umbau ALSA MMAP
 class MusikSpieler {
 private:
@@ -42,15 +43,21 @@ private:
             int volume = 25;
             int currentTrack = 0;
             unsigned int sampleRate = 44100;
-            // Bruch
+
+//Bruch
+//Dummy-Funktion für das blockweise Streaming (muss noch final implementiert werden)
+            float getNextSampleFromFile() {
+                return 0.0f;
+            }
             float convert24BitToFloat(unsigned char* bytes) {
-                // Kombiniert 3 Bytes zu einem 32bit Integer Signed
+
+//Kombiniert 3 Bytes zu einem 32bit Integer Signed
                 int32_t sample = (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
-                if (sample & 0x800000) sample |= ~0xFF000000; //VorzeichenFF000000ausdehnenFFFFFF
-                return sample / 8388608.0f;  //-1.0 bis 1.0 oder 0.95
-                //Normalisieren -1.0 bis 1.0 oder 0.95 Festkomma-Arithmetik (Fixed-Point) Einbauen
-                return (float)sample / 2147483648.0f;
-                                                        }
+//VorzeichenFF000000ausdehnenFFFFFF
+                if (sample & 0x800000) sample |= ~0xFF000000;
+//-1.0 bis 1.0 oder 0.95
+                return sample / 8388608.0f;
+                                        }
             bool loadWAV(const char* filepath) {
             std::ifstream file(filepath, std::ios::binary);
             if (!file) return false;
@@ -61,7 +68,7 @@ private:
             }
             this->sampleRate = header.sampleRate;
             return true;
-                                                    }
+                                        }
 public:
 //STEUERUNG
                 void key_Space()  { toggle(); }   //Start/Stopp
@@ -73,64 +80,75 @@ public:
                 void setQuality(unsigned int rate) {
                     if (rate >= MIN_SAMPLERATE && rate <= MAX_SAMPLERATE) {
                     this->sampleRate = rate;
-                                                }
-                                            }
+                                                            }
+                                        }
 //PLAYLIST
-                    void start() { isPlaying = true; }
-                    void toggle() { isPlaying = !isPlaying; }
-                    void next() {
+                void start() { isPlaying = true; }
+                void toggle() { isPlaying = !isPlaying; }
+                void next() {
                         if (currentTrack < MAX_PLAYLIST - 1 && playlist[currentTrack + 1])
                         currentTrack++;
                                         }
-                        void back() {
+                void back() {
                         if (currentTrack > 0) currentTrack--;
-                                    }
-                        void setVolume(int v) {
+                                        }
+                void setVolume(int v) {
                         if (v < 0) v = 0;
                         if (v > MAX_VOLUME) v = MAX_VOLUME;
                         this->volume = v;
                         targetVolume = (float)v / 100.0f;
-                                }
-                        void addTrack(const char* path) {
+                                        }
+
+                void addTrack(const char* path) {
+
                             for(int i = 0; i < MAX_PLAYLIST; i++) {
                             if(playlist[i] == nullptr) {
                                 playlist[i] = path;
                                 return;}
-                                playlist[MAX_PLAYLIST - 1] = nullptr;
-                                if (currentTrack >= index && currentTrack > 0)
-                                currentTrack--;
-                            }
-                        }
+                                        }
+                                        }
+                        playlist[MAX_PLAYLIST - 1] = path;
+}
                             void removeTrack(int index) {
                                 if (index < 0 || index >= MAX_PLAYLIST) return;
                                 if (playlist[index] == nullptr) return;
                                     for (int i = index; i < MAX_PLAYLIST - 1; i++) {
                                     playlist[i] = playlist[i + 1];
                                     if (playlist[i] == nullptr) break;
-                    }
+                                            }
                                     if (currentTrack >= index && currentTrack > 0)
                                     currentTrack--;
-                }
+                                            }
                                     void savePlaylist() {
                                         std::ofstream file(LIST_FILENAME);
                                         for(int i = 0; i < MAX_PLAYLIST && playlist[i]; i++)
                                             file << playlist[i] << "\n";
-            }
+                                            }
 //TREIBERVERWALTUNG
                                             void processAudio(float* deviceOutput, float* decoderInput, int length) {
+//Fall 1 Pause dann Stille ausgeben
                                                 if (!isPlaying) {
-                                                    for(int i = 0; i < length; i++) deviceOutput[i] = 0.0f;
+                                                    for(int i = 0; i < length; i++)
+                                                        deviceOutput[i] = 0.0f;
+                                            }
                                                     return;
-                                                    float sanftesSample = decoderInput[i] * volumeMultiplier; // Unerreichbar
-        }
+                                            }
+//Fall 2 Wiedergabe laeuft MusikStuecke verarbeiten
+                                                    float sanftesMusikSpiel = decoderInput[i] * volumeMultiplier;
+                                            }
                                                     for(int i = 0; i < length; i++) {
+//rawSample aus der Datei lesen
                                                     float rawSample = getNextSampleFromFile();
 //ANTIKNACKRAMPE
                                                     volumeMultiplier += (targetVolume - volumeMultiplier) * 0.001f;
-                                                    float sample = decoderInput[i] * volumeMultiplier;
-                                                    if (sample > 0.95f)  sample = 0.95f;
-                                                    if (sample < -0.95f) sample = -0.95f;
-                                                    deviceOutput[i] = sample;}
+
+//Decodereingabe mal sanfte Lautstaerke
+                                                    float sanftesMusikSpiel = decoderInput[i] * volumeMultiplier;
+//Hart Knackschutz 0.95f
+                                                    if (sanftesMusikSpiel > 0.95f)  sanftesMusikSpiel = 0.95f;
+                                                    if (sanftesMusikSpiel< -0.95f) sanftesMusikSpiel = -0.95f;
+//Ausgabe an Soundkarte
+                                                    deviceOutput[i] = sanftesMusikSpiel;}
     }
 };
 
@@ -139,7 +157,7 @@ public:
 //Maximale Kompatibilitaet und Qualitaet!
 //OPEN SOURCE/ FREE FOR ALL AND EVERYBODY :-)
 //Name: Musik Spieler
-//Version: 0.4 WAV Only Version
+//Version: 0.5 WAV Only Version
 //Funktion Bedingungen
 //Start: Leertaste, oder Starttaste Geraet
 //Stopp: Leertaste, oder Stopptaste Gereat
