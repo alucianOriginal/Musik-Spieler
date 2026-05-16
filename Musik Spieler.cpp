@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <string>
 
+#define FORMATTAG 1 //1=PCM
+#define CHANNELS 2 //1 Mono 2 Stereo
 #define MIN_SAMPLERATE 44100   //MinimumGuteSoundDiktatur
 #define MAX_SAMPLERATE 192000  //MaximumHighEnd
 #define BUFFER_SIZE 4096       //StatischerPufferKleinCachegroßKnacken
@@ -21,8 +23,8 @@ struct WAVHeader {
         char wave[4];           //Wave
         char fmt[4];            //fmt
         uint32_t fmtLen;
-        uint16_t formatTag;     //1=PCM
-        uint16_t channels;      //1=Mono2=Stereo
+        uint16_t formatTag;
+        uint16_t channels;
         uint32_t sampleRate;    //44100
         uint32_t byteRate;
         uint16_t blockAlign;
@@ -108,7 +110,7 @@ public:
                                         }
                                         }
                         playlist[MAX_PLAYLIST - 1] = path;
-}
+
                             void removeTrack(int index) {
                                 if (index < 0 || index >= MAX_PLAYLIST) return;
                                 if (playlist[index] == nullptr) return;
@@ -135,7 +137,7 @@ public:
                                             }
 //Fall 2 Wiedergabe laeuft MusikStuecke verarbeiten
                                                     float sanftesMusikSpiel = decoderInput[i] * volumeMultiplier;
-                                            }
+
                                                     for(int i = 0; i < length; i++) {
 //rawSample aus der Datei lesen
                                                     float rawSample = getNextSampleFromFile();
