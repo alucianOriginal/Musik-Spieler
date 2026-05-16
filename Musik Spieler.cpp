@@ -9,7 +9,7 @@
 #define MIN_PLAYLIST 0         //Minimal0oder1
 #define MIN_VOLUME 0           //Mindestlautstaerke
 #define MAX_VOLUME 100         //SchutzUebersteuerungKnarzen
-#define LIST_FILENAME          /home/Musik/MusikSpieler/Musikspielerliste/"MusikSpielerListe.txt"
+#define LIST_FILENAME          /home/Musik/MusikSpieler/Musikspielerliste/"MusikSpielerListe.txt" //Umbau zu Sektoren auf Datentraeger
 #define getNextSampleFromFile  /home/Musik/MusikSpieler
 
 
@@ -48,7 +48,7 @@ private:
                 int32_t sample = (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
                 if (sample & 0x800000) sample |= ~0xFF000000; //VorzeichenFF000000ausdehnenFFFFFF
                 return sample / 8388608.0f;  //-1.0 bis 1.0 oder 0.95
-                //Normalisieren -1.0 bis 1.0 oder 0.95
+                //Normalisieren -1.0 bis 1.0 oder 0.95 Festkomma-Arithmetik (Fixed-Point) Einbauen
                 return (float)sample / 2147483648.0f;
                                                         }
             bool loadWAV(const char* filepath) {
